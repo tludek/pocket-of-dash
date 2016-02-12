@@ -1,0 +1,71 @@
+-dontskipnonpubliclibraryclasses
+-dontoptimize
+-dontpreverify
+-dontobfuscate
+-verbose
+
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Fragment
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+-keep public class * extends android.app.backup.BackupAgentHelper
+-keep public class * extends android.preference.Preference
+
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet);
+}
+
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+-keepclassmembers public class * extends android.view.View {
+    void set*(***);
+    *** get*();
+}
+
+-keepclassmembers class * extends android.app.Activity {
+    public void *(android.view.View);
+}
+
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+-keep class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# android-support
+-dontwarn android.support.**
+-keep class android.support.v7.widget.RoundRectDrawable { *; }
+
+# bitcoinj
+-keep class org.bitcoinj.wallet.Protos$** { *; }
+-keep class org.bitcoin.protocols.payments.Protos$** { *; }
+-dontwarn org.bitcoinj.store.WindowsMMapHack
+-dontwarn org.bitcoinj.store.LevelDBBlockStore
+-dontwarn okio.DeflaterSink
+-dontwarn okio.Okio
+
+# zxing
+-dontwarn com.google.zxing.common.BitMatrix
+
+# Guava
+-dontwarn sun.misc.Unsafe
+-dontwarn com.google.common.collect.MinMaxPriorityQueue
+-dontwarn javax.annotation.**
+
+# logback-android
+-dontwarn javax.mail.**
