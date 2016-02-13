@@ -65,7 +65,22 @@
 # Guava
 -dontwarn sun.misc.Unsafe
 -dontwarn com.google.common.collect.MinMaxPriorityQueue
--dontwarn javax.annotation.**
+-keepclassmembers class ** {
+    @com.google.common.eventbus.Subscribe public *;
+}
 
 # logback-android
 -dontwarn javax.mail.**
+
+#Butter Knife
+-keep class butterknife.** { *; }
+-dontwarn butterknife.internal.**
+-keep class **$$ViewBinder { *; }
+
+-keepclasseswithmembernames class * {
+    @butterknife.* <fields>;
+}
+
+-keepclasseswithmembernames class * {
+    @butterknife.* <methods>;
+}
