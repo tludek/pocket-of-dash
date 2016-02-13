@@ -20,17 +20,17 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import pl.ludex.smartdashwallet.dash.DashKitService;
-import pl.ludex.smartdashwallet.event.MainEventBus;
+import pl.ludex.smartdashwallet.event.BalanceChangeEvent;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -52,14 +52,20 @@ public class MainActivity extends AppCompatActivity
     private DashKitService dashKitService;
     private boolean dashKitServiceBound = false;
 
-    private EventBus eventBus = MainEventBus.getDefault();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        initView();
+    }
 
+    private void initView() {
+        setSupportActionBar(toolbarView);
+        setTitle("");
+        initNavigationDrawer();
+        balancePanelView.setVisibility(View.INVISIBLE);
+        toolbarProgressBarView.setVisibility(View.VISIBLE);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,7 +74,9 @@ public class MainActivity extends AppCompatActivity
                         .setAction("Action", null).show();
             }
         });
+    }
 
+    private void initNavigationDrawer() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbarView, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -77,15 +85,6 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        initView();
-    }
-
-    private void initView() {
-        setSupportActionBar(toolbarView);
-        setTitle("");
-        balancePanelView.setVisibility(View.INVISIBLE);
-        toolbarProgressBarView.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -93,12 +92,12 @@ public class MainActivity extends AppCompatActivity
         super.onStart();
         Intent intent = new Intent(this, DashKitService.class);
         bindService(intent, dashKitServiceConnection, Context.BIND_AUTO_CREATE);
-        eventBus.register(this);
+        EventBus.getDefault().register(this);
     }
 
     @Override
     protected void onStop() {
-        eventBus.unregister(this);
+        EventBus.getDefault().unregister(this);
         if (dashKitServiceBound) {
             unbindService(dashKitServiceConnection);
         }
@@ -120,16 +119,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Subscribe
-    public void balanceChangeEvent(final Coin newBalance) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                balancePanelView.setVisibility(View.VISIBLE);
-                toolbarProgressBarView.setVisibility(View.GONE);
-                balanceDashView.setText(newBalance.toString());
-            }
-        });
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void balanceChangeEvent(BalanceChangeEvent event) {
+        Coin newBalance = event.getNewBalance();
+        balancePanelView.setVisibility(View.VISIBLE);
+        toolbarProgressBarView.setVisibility(View.GONE);
+        balanceDashView.setText(newBalance.toString());
     }
 
     @Override
@@ -195,8 +190,10 @@ public class MainActivity extends AppCompatActivity
         public void onServiceConnected(ComponentName className, IBinder service) {
             DashKitService.Binder binder = (DashKitService.Binder) service;
             dashKitService = binder.getService();
-            Address receiveAddress = dashKitService.freshReceiveAddress();
-            descriptionView.setText(receiveAddress.toString());
+            if (dashKitService.isReady()) {
+                Address receiveAddress = dashKitService.freshReceiveAddress();
+                descriptionView.setText(receiveAddress.toString());
+            }
             dashKitServiceBound = true;
         }
 

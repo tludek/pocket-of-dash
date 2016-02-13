@@ -4,8 +4,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import com.google.common.eventbus.EventBus;
-
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
@@ -18,6 +16,7 @@ import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.script.Script;
+import org.greenrobot.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import pl.ludex.smartdashwallet.event.MainEventBus;
+import pl.ludex.smartdashwallet.event.BalanceChangeEvent;
 
 /**
  * Created by Tomasz Ludek on 13/02/2016.
@@ -45,7 +44,6 @@ public class DashKitService extends Service {
 
     private WalletAppKit walletKit;
 
-    private EventBus eventBus = MainEventBus.getDefault();
     private final IBinder binder = new Binder();
     private DashKitStatus dashKitStatus = DashKitStatus.IDLE;
 
@@ -99,7 +97,7 @@ public class DashKitService extends Service {
                 log.info("dashj successfully started (balance " + balance + ")");
 
                 wallet().addEventListener(mWalletEventListener);
-                eventBus.post(balance);
+                EventBus.getDefault().post(new BalanceChangeEvent(null, balance));
             }
         };
 
@@ -160,7 +158,7 @@ public class DashKitService extends Service {
         public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
             log.info("-----> coins resceived: " + tx.getHashAsString());
             log.info("received: " + tx.getValue(wallet));
-            eventBus.post(newBalance);
+            EventBus.getDefault().post(new BalanceChangeEvent(prevBalance, newBalance));
         }
 
         @Override
