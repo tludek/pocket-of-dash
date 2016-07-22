@@ -41,6 +41,20 @@ android {
         }
     }
 
+    productFlavors {
+
+        def TEST_MODE = "TEST_MODE";
+
+        flavor_mainnet {
+            buildConfigField "boolean", TEST_MODE, "false"
+        }
+
+        flavor_testnet {
+            applicationId "pl.ludex.smartdashwallet.testnet"
+            buildConfigField "boolean", TEST_MODE, "true"
+        }
+    }
+
     lintOptions {
         disable 'InvalidPackage'    //required by Butter Knife
     }
@@ -67,7 +81,7 @@ dependencies {
     compile 'com.android.support:support-v13:23.1.1'
     compile 'com.android.support:recyclerview-v7:23.1.1'
     compile 'com.android.support:cardview-v7:23.1.1'
-    compile 'org.bitcoinj:darkcoinj-core:0.13.2.ix'
+    compile 'org.bitcoinj:darkcoinj-core:0.13.2.rix'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile 'com.google.guava:guava:16.0.1'
     compile 'com.google.code.findbugs:jsr305:2.0.2'

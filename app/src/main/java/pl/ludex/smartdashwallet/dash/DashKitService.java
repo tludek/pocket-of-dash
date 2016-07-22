@@ -6,6 +6,7 @@ import android.os.IBinder;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.Context;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
@@ -15,6 +16,7 @@ import org.bitcoinj.core.WalletEventListener;
 import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script;
 import org.greenrobot.eventbus.EventBus;
 import org.slf4j.Logger;
@@ -27,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import pl.ludex.smartdashwallet.Constants;
 import pl.ludex.smartdashwallet.event.BalanceChangeEvent;
 
 /**
@@ -38,9 +41,7 @@ public class DashKitService extends Service {
 
     private static final Logger log = LoggerFactory.getLogger(DashKitService.class);
 
-    final static String defaultWalletAndChainPrefix = "checkpoint";
-    final static String defaultWalletExt = ".wallet";
-    final static String defaultChainExt = ".spvchain";
+    final static String defaultWalletAndChainPrefix = "wallet-protobuf";
 
     private WalletAppKit walletKit;
 
@@ -61,6 +62,11 @@ public class DashKitService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return this.binder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
     }
 
     public boolean isReady() {
@@ -84,12 +90,15 @@ public class DashKitService extends Service {
         log.info("DashKit building...");
         createCheckpoint(false);
         initMnemonicCode();
-        NetworkParameters params = MainNetParams.get();
+        NetworkParameters params = Constants.NETWORK_PARAMETERS;
         walletKit = new WalletAppKit(params, getFilesDir(), defaultWalletAndChainPrefix) {
 
             @Override
             protected void onSetupCompleted() {
                 dashKitStatus = DashKitStatus.READY;
+
+                Context.propagate(context);
+
                 // This is called in a background thread after startAndWait is called, as setting up various objects
                 // can do disk and network IO that may cause UI jank/stuttering in wallet apps if it were to be done
                 // on the main thread.

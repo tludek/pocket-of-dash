@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -85,6 +86,15 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                balancePanelView.setVisibility(View.VISIBLE);
+                toolbarProgressBarView.setVisibility(View.GONE);
+                balanceDashView.setText("12.34");//newBalance.toString());
+            }
+        }, 3000);
     }
 
     @Override
@@ -107,7 +117,7 @@ public class MainActivity extends AppCompatActivity
     @OnClick(R.id.balance_panel)
     public void onBalancePanelClick(View view) {
         if (dashKitServiceBound) {
-            balanceDashView.setText(dashKitService.getBalance().toString());
+            balanceDashView.setText("12.34");//dashKitService.getBalance().toString());
         } else {
             Snackbar.make(view, "Dash service not bound", Snackbar.LENGTH_LONG)
                     .setAction("Action", new View.OnClickListener() {
@@ -121,10 +131,10 @@ public class MainActivity extends AppCompatActivity
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void balanceChangeEvent(BalanceChangeEvent event) {
-        Coin newBalance = event.getNewBalance();
-        balancePanelView.setVisibility(View.VISIBLE);
-        toolbarProgressBarView.setVisibility(View.GONE);
-        balanceDashView.setText(newBalance.toString());
+//        Coin newBalance = event.getNewBalance();
+//        balancePanelView.setVisibility(View.VISIBLE);
+//        toolbarProgressBarView.setVisibility(View.GONE);
+//        balanceDashView.setText("12.34");//newBalance.toString());
     }
 
     @Override
@@ -152,9 +162,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -165,19 +175,19 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
+//        if (id == R.id.nav_camera) {
+//            // Handle the camera action
+//        } else if (id == R.id.nav_gallery) {
+//
+//        } else if (id == R.id.nav_slideshow) {
+//
+//        } else if (id == R.id.nav_manage) {
+//
+//        } else if (id == R.id.nav_share) {
+//
+//        } else if (id == R.id.nav_send) {
+//
+//        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
