@@ -39,18 +39,26 @@ public class BaseActivity extends AppCompatActivity implements DashKitServiceLis
         super.onStop();
     }
 
+    protected DashKitService getDashKitService() {
+        return dashKitService;
+    }
+
+    protected void onDashServiceConnected() {
+        if (dashKitService.isReady()) {
+            Address receiveAddress = dashKitService.freshReceiveAddress();
+//                descriptionView.setText(receiveAddress.toString());
+        }
+    }
+
     private ServiceConnection dashKitServiceConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             DashKitService.Binder binder = (DashKitService.Binder) service;
             dashKitService = binder.getService();
-            if (dashKitService.isReady()) {
-                Address receiveAddress = dashKitService.freshReceiveAddress();
-//                descriptionView.setText(receiveAddress.toString());
-            }
             dashKitServiceBound = true;
             dashKitService.setDashKitServiceListener(BaseActivity.this);
+            onDashServiceConnected();
         }
 
         @Override
