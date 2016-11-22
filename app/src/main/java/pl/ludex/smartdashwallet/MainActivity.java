@@ -22,36 +22,31 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Coin;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import pl.ludex.smartdashwallet.dash.DashKitService;
 import pl.ludex.smartdashwallet.event.BalanceChangeEvent;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-
-    @Bind(R.id.toolbar)
+    @BindView(R.id.toolbar)
     Toolbar toolbarView;
-    @Bind(R.id.toolbar_progress_bar)
+    @BindView(R.id.toolbar_progress_bar)
     ProgressBar toolbarProgressBarView;
-    @Bind(R.id.balance_panel)
+    @BindView(R.id.balance_panel)
     View balancePanelView;
-    @Bind(R.id.balance_dash)
+    @BindView(R.id.balance_dash)
     TextView balanceDashView;
-    @Bind(R.id.balance_usd)
+    @BindView(R.id.balance_usd)
     TextView balanceUsdView;
-    @Bind(R.id.description)
+    @BindView(R.id.description)
     TextView descriptionView;
-
-    private DashKitService dashKitService;
-    private boolean dashKitServiceBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,26 +92,9 @@ public class MainActivity extends AppCompatActivity
         }, 3000);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Intent intent = new Intent(this, DashKitService.class);
-        bindService(intent, dashKitServiceConnection, Context.BIND_AUTO_CREATE);
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    protected void onStop() {
-        EventBus.getDefault().unregister(this);
-        if (dashKitServiceBound) {
-            unbindService(dashKitServiceConnection);
-        }
-        super.onStop();
-    }
-
     @OnClick(R.id.balance_panel)
     public void onBalancePanelClick(View view) {
-        if (dashKitServiceBound) {
+        if (isDashKitServiceBound()) {
             balanceDashView.setText("12.34");//dashKitService.getBalance().toString());
         } else {
             Snackbar.make(view, "Dash service not bound", Snackbar.LENGTH_LONG)
@@ -193,24 +171,4 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
-    private ServiceConnection dashKitServiceConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            DashKitService.Binder binder = (DashKitService.Binder) service;
-            dashKitService = binder.getService();
-            if (dashKitService.isReady()) {
-                Address receiveAddress = dashKitService.freshReceiveAddress();
-                descriptionView.setText(receiveAddress.toString());
-            }
-            dashKitServiceBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            dashKitServiceBound = false;
-            dashKitService = null;
-        }
-    };
 }

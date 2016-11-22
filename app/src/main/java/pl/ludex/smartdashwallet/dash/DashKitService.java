@@ -2,21 +2,20 @@ package pl.ludex.smartdashwallet.dash;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Context;
+import org.bitcoinj.core.DownloadProgressTracker;
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.core.WalletEventListener;
 import org.bitcoinj.crypto.MnemonicCode;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script;
 import org.greenrobot.eventbus.EventBus;
 import org.slf4j.Logger;
@@ -27,14 +26,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.List;
 
 import pl.ludex.smartdashwallet.Constants;
 import pl.ludex.smartdashwallet.event.BalanceChangeEvent;
 
-/**
- * Created by Tomasz Ludek on 13/02/2016.
- */
 public class DashKitService extends Service {
 
     private static final String BIP39_WORDLIST_FILENAME = "bip39-wordlist.txt";
@@ -48,7 +45,19 @@ public class DashKitService extends Service {
     private final IBinder binder = new Binder();
     private DashKitStatus dashKitStatus = DashKitStatus.IDLE;
 
+    private int blockchainLoadingProgress;
+
+    private DashKitServiceListener dashKitServiceListener;
+
+    private Handler handler;
+
     public DashKitService() {
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        handler = new Handler();
     }
 
     @Override
@@ -90,8 +99,13 @@ public class DashKitService extends Service {
         log.info("DashKit building...");
         createCheckpoint(false);
         initMnemonicCode();
-        NetworkParameters params = Constants.NETWORK_PARAMETERS;
-        walletKit = new WalletAppKit(params, getFilesDir(), defaultWalletAndChainPrefix) {
+
+//        final NetworkParameters params = Constants.NETWORK_PARAMETERS;
+//        Context walletContext = new Context(params);
+//        walletContext.initDash(false, true);
+
+//        walletKit = new WalletAppKit(walletContext, getFilesDir(), defaultWalletAndChainPrefix) {
+        walletKit = new WalletAppKit(Constants.NETWORK_PARAMETERS, getFilesDir(), defaultWalletAndChainPrefix) {
 
             @Override
             protected void onSetupCompleted() {
@@ -106,11 +120,37 @@ public class DashKitService extends Service {
                 log.info("dashj successfully started (balance " + balance + ")");
 
                 wallet().addEventListener(mWalletEventListener);
+//                wallet().addEventListener(mWalletEventListener, Threading.USER_THREAD);
                 EventBus.getDefault().post(new BalanceChangeEvent(null, balance));
             }
         };
 
+        walletKit.setBlockingStartup(false);
+//        walletKit.setDownloadListener(blockchainDownloadListener);
+        walletKit.setDownloadListener(new DownloadProgressTracker() {
+            @Override
+            protected void progress(double pct, int blocksSoFar, Date date) {
+                super.progress(pct, blocksSoFar, date);
+                int percentage = (int) Math.round(pct);
+                if (percentage != blockchainLoadingProgress) {
+                    blockchainLoadingProgress = percentage;
+                    publishBlockchainLoadingProgress();
+                }
+            }
+        });
+
         walletKit.startAsync();
+    }
+
+    private void publishBlockchainLoadingProgress() {
+        if (dashKitServiceListener != null) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    dashKitServiceListener.loadingBlockchainProgress(blockchainLoadingProgress);
+                }
+            });
+        }
     }
 
     private void createCheckpoint(boolean rebuild) {
@@ -167,12 +207,18 @@ public class DashKitService extends Service {
         public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
             log.info("-----> coins resceived: " + tx.getHashAsString());
             log.info("received: " + tx.getValue(wallet));
-            EventBus.getDefault().post(new BalanceChangeEvent(prevBalance, newBalance));
+
+            if (dashKitServiceListener != null) {
+                dashKitServiceListener.onCoinsReceived(tx);
+            }
         }
 
         @Override
         public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
             log.info("coins sent");
+            if (dashKitServiceListener != null) {
+                dashKitServiceListener.onCoinsReceived(tx);
+            }
         }
 
         @Override
@@ -202,6 +248,15 @@ public class DashKitService extends Service {
             log.info("new key added");
         }
     };
+
+    public void setDashKitServiceListener(DashKitServiceListener dashKitServiceListener) {
+        this.dashKitServiceListener = dashKitServiceListener;
+        publishBlockchainLoadingProgress();
+    }
+
+    private void runOnUiThread(Runnable runnable) {
+        handler.post(runnable);
+    }
 
     public class Binder extends android.os.Binder {
         public DashKitService getService() {
