@@ -10,11 +10,6 @@ buildscript {
 apply plugin: 'com.android.application'
 apply plugin: 'com.getkeepsafe.dexcount'
 
-def localMavenRepo = 'file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath
-repositories {
-    maven { url localMavenRepo }
-}
-
 ext {
     archivesBaseName = 'dash-wallet'
 }
@@ -84,8 +79,6 @@ dependencies {
     compile "com.android.support:recyclerview-v7:${appcompatVersion}"
     compile "com.android.support:cardview-v7:${appcompatVersion}"
     compile 'org.dashj:dashj-core:0.13.2.12.0'
-//    compile 'org.dashj:dashj-core:0.13.2.12.1'
-//    compile 'org.bitcoinj:darkcoinj-core:0.13.2.rix'
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile 'com.google.guava:guava:16.0.1'
     compile 'com.google.code.findbugs:jsr305:2.0.2'
