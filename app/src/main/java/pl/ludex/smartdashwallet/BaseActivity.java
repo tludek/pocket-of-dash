@@ -45,7 +45,7 @@ public class BaseActivity extends AppCompatActivity implements DashKitServiceLis
 
     protected void onDashServiceConnected() {
         if (dashKitService.isReady()) {
-            Address receiveAddress = dashKitService.freshReceiveAddress();
+//            Address receiveAddress = dashKitService.freshReceiveAddress();
 //                descriptionView.setText(receiveAddress.toString());
         }
     }

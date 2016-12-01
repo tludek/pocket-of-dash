@@ -65,7 +65,7 @@ public class DashKitService extends Service {
 
         buildKit();
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -83,11 +83,15 @@ public class DashKitService extends Service {
     }
 
     public Coin getBalance() {
-        if (walletKit != null) {
+        if (walletKit != null && walletKit.wallet() != null) {
             return walletKit.wallet().getBalance();
         } else {
             return null;
         }
+    }
+
+    public WalletAppKit getWalletKit() {
+        return walletKit;
     }
 
     public Address freshReceiveAddress() {
