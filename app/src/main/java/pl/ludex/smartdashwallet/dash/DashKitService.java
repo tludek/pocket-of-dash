@@ -83,19 +83,28 @@ public class DashKitService extends Service {
     }
 
     public Coin getBalance() {
-        if (walletKit != null && walletKit.wallet() != null) {
-            return walletKit.wallet().getBalance();
-        } else {
-            return null;
-        }
+        return walletKit.wallet().getBalance();
     }
 
     public WalletAppKit getWalletKit() {
         return walletKit;
     }
 
+    /**
+     * Always return a newly derived address
+     * @return
+     */
     public Address freshReceiveAddress() {
         return walletKit.wallet().freshReceiveAddress();
+    }
+
+    /**
+     * This address is intended for UI that wish to display an address at all times.
+     * Once the current address is seen being used, it changes to a new one.
+     * @return
+     */
+    public Address currentReceiveAddress() {
+        return walletKit.wallet().currentReceiveAddress();
     }
 
     private void buildKit() {
@@ -208,12 +217,18 @@ public class DashKitService extends Service {
     private WalletEventListener mWalletEventListener = new WalletEventListener() {
 
         @Override
-        public void onCoinsReceived(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
+        public void onCoinsReceived(Wallet wallet, final Transaction tx, Coin prevBalance, Coin newBalance) {
             log.info("-----> coins resceived: " + tx.getHashAsString());
             log.info("received: " + tx.getValue(wallet));
 
             if (dashKitServiceListener != null) {
-                dashKitServiceListener.onCoinsReceived(tx);
+                final Transaction finalTx = tx;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dashKitServiceListener.onCoinsReceived(finalTx);
+                    }
+                });
             }
         }
 
@@ -221,7 +236,13 @@ public class DashKitService extends Service {
         public void onCoinsSent(Wallet wallet, Transaction tx, Coin prevBalance, Coin newBalance) {
             log.info("coins sent");
             if (dashKitServiceListener != null) {
-                dashKitServiceListener.onCoinsReceived(tx);
+                final Transaction finalTx = tx;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dashKitServiceListener.onCoinsSent(finalTx);
+                    }
+                });
             }
         }
 

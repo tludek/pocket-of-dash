@@ -3,6 +3,7 @@ package pl.ludex.smartdashwallet;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -13,6 +14,7 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.BitcoinSerializer;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.CoinDefinition;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
@@ -56,9 +58,11 @@ public class HomeActivity extends BaseActivity {
     }
 
     @Override
-    public void onDashServiceConnected() {
-        super.onDashServiceConnected();
-        refreshBalance();
+    public void onDashServiceConnected(DashKitService dashKitService) {
+        super.onDashServiceConnected(dashKitService);
+        if (dashKitService.isReady()) {
+            refreshBalance();
+        }
     }
 
     @Override
@@ -70,9 +74,10 @@ public class HomeActivity extends BaseActivity {
     private void refreshBalance() {
         DashKitService dashKitService = getDashKitService();
         Coin balance = dashKitService.getBalance();
-        if (balance != null) {
-            balanceText.setText(balance.toFriendlyString());
-        }
+        balanceText.setText(balance.toFriendlyString());
+        Address inAddress = dashKitService.currentReceiveAddress();
+        inAddressEdit.setText(inAddress.toString());
+        Log.d("Wallet", "currentReceiveAddress: " + inAddress.toString());
     }
 
     @OnClick(R.id.start_main_activity_button)
@@ -83,77 +88,7 @@ public class HomeActivity extends BaseActivity {
 
     @OnClick(R.id.sendButton)
     void onSendCoinsClick() {
-        String amountTxt = "0.019";//amountEdit.getText().toString();
-        Coin amount;
-        try {
-            amount = Coin.parseCoin(amountTxt);
-        } catch (NumberFormatException ex) {
-            Toast.makeText(this, "Incorrect amount: " + amountTxt, Toast.LENGTH_LONG).show();
-            return;
-        }
-        String toAddressTxt = "Xxstct1gPdddnJHeVxsLSFnuQT1YAyPecY";//outAddressEdit.getText().toString();
-        Address toAddress;
-        try {
-            toAddress = new Address(Constants.NETWORK_PARAMETERS, toAddressTxt);
-        } catch (AddressFormatException e) {
-            Toast.makeText(this, "Incorrect address: " + toAddressTxt, Toast.LENGTH_LONG).show();
-            return;
-        }
 
-        boolean useInstantSend = instantSendCheck.isSelected();
-
-        Coin txFee;
-        CoinSelector coinSelector;
-
-        Wallet.SendRequest request = Wallet.SendRequest.to(toAddress, amount);
-
-        if (useInstantSend) {
-            txFee = Coin.valueOf(CoinDefinition.INSTANTX_FEE);
-            coinSelector = new InstantXCoinSelector();
-        } else {
-            txFee = Coin.valueOf(CoinDefinition.DEFAULT_MIN_TX_FEE);
-            coinSelector = new DefaultCoinSelector();
-        }
-
-        DashKitService dashKitService = getDashKitService();
-        Coin balance = dashKitService.getBalance();
-
-        //if (service.kit.wallet().getBalance(coinSelector).subtract(minFee).isPositive()) {
-        if (!amount.isGreaterThan(balance.subtract(txFee))) {
-
-
-            WalletAppKit walletKit = dashKitService.getWalletKit();
-            Wallet wallet = walletKit.wallet();
-            try {
-                wallet.sendCoins(walletKit.peerGroup(), toAddress, amount);
-//                wallet.sendCoins(request);
-            } catch (InsufficientMoneyException e) {
-                Toast.makeText(this, "Insufficient money", Toast.LENGTH_LONG).show();
-            }
-
-//            final Transaction transaction = useInstantSend ? new TransactionLockRequest(Constants.NETWORK_PARAMETERS) : new Transaction(Constants.NETWORK_PARAMETERS);
-//            for (final PaymentIntent.Output output : outputs)
-//                transaction.addOutput(output.amount, output.script);
-//            return Wallet.SendRequest.forTx(transaction);
-//
-//
-//
-//            final Transaction transaction = useInstantSend ? new TransactionLockRequest(Constants.NETWORK_PARAMETERS) : new Transaction(Constants.NETWORK_PARAMETERS);
-//            for (final PaymentIntent.Output output : outputs)
-//                transaction.addOutput(output.amount, output.script);
-//            return Wallet.SendRequest.forTx(transaction);
-//
-//            final Wallet.SendRequest sendRequest = finalPaymentIntent.toSendRequest();
-//            sendRequest.useInstantX = usingInstantX;
-//            sendRequest.emptyWallet = paymentIntent.mayEditAmount() && finalAmount.equals(wallet.getBalance(Wallet.BalanceType.AVAILABLE));
-//            sendRequest.feePerKb = feeCategory.feePerKb;
-//            sendRequest.feePerKb = sendRequest.useInstantX ? Coin.valueOf(CoinDefinition.INSTANTX_FEE) : sendRequest.feePerKb;
-//
-//
-//            sendRequest.memo = paymentIntent.memo;
-//            sendRequest.exchangeRate = amountCalculatorLink.getExchangeRate();
-//            sendRequest.aesKey = encryptionKey;
-        }
     }
 
 //    private static Output[] buildSimplePayTo(final Coin amount, final Address address) {

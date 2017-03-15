@@ -43,7 +43,7 @@ public class BaseActivity extends AppCompatActivity implements DashKitServiceLis
         return dashKitService;
     }
 
-    protected void onDashServiceConnected() {
+    protected void onDashServiceConnected(DashKitService dashKitService) {
         if (dashKitService.isReady()) {
 //            Address receiveAddress = dashKitService.freshReceiveAddress();
 //                descriptionView.setText(receiveAddress.toString());
@@ -58,7 +58,7 @@ public class BaseActivity extends AppCompatActivity implements DashKitServiceLis
             dashKitService = binder.getService();
             dashKitServiceBound = true;
             dashKitService.setDashKitServiceListener(BaseActivity.this);
-            onDashServiceConnected();
+            onDashServiceConnected(dashKitService);
         }
 
         @Override
